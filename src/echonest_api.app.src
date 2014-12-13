@@ -1,0 +1,10 @@
+{application, echonest_api,
+ [{description, "Erlang wrapper for The Echo Nest API."},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [kernel,
+                  stdlib,
+                  crypto,
+                  inets]},
+  {mod, {echonest_api_app, []}},
+  {env, []}]}.
