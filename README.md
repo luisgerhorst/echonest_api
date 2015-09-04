@@ -2,6 +2,8 @@
 
 This is an Erlang wrapper that allows easy access to the API of [The Echo Nest](http://the.echonest.com). It dynamically limits the number of requests according to the API's rate limit.
 
+Because requests are performed one after another by a single worker it may not be suited for applications that require high throughput.
+
 ## Config
 
 Simply set your [API key](http://developer.echonest.com/account/register) as environment variable before starting the application.
