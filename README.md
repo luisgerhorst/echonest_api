@@ -17,7 +17,7 @@ application:set_env(echonest_api, echonest_api_key, "my-api-key-here")
 Start the application before making any request.
 
 ```erl
-application:ensure_all_started(rdio_api)
+application:ensure_all_started(echonest_api)
 ```
 
 ## Basic Usage
