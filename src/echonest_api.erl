@@ -30,30 +30,30 @@ get(Path, Data) ->
 -define(ReadTasteProfileChunkSize, 300).
 
 read_tasteprofile(TP, Params) ->
-	read_tasteprofile(TP, Params, [], 0).
+    read_tasteprofile(TP, Params, [], 0).
 
 read_tasteprofile(TP, Params, OldItems, N) ->
-	ChunkSize = ?ReadTasteProfileChunkSize,
-	Data = [{"id", TP},
-			{"start", N*ChunkSize},
-			{"results", ChunkSize} | Params],
-	{ok, #{<<"catalog">> := #{<<"items">> := ReceivedItems,
+    ChunkSize = ?ReadTasteProfileChunkSize,
+    Data = [{"id", TP},
+            {"start", N*ChunkSize},
+            {"results", ChunkSize} | Params],
+    {ok, #{<<"catalog">> := #{<<"items">> := ReceivedItems,
                               <<"total">> := TotalItems}}} = get("tasteprofile/read", Data),
-	Items = ReceivedItems++OldItems,
-	if length(Items) =:= TotalItems -> Items;
-	   true -> read_tasteprofile(TP, Params, Items, N+1) end.
+    Items = ReceivedItems++OldItems,
+    if length(Items) =:= TotalItems -> Items;
+       true -> read_tasteprofile(TP, Params, Items, N+1) end.
 
 -define(WaitForTicketFinishRefreshDelay, 1000).
 
 wait_for_ticket_to_finish(Ticket) ->
-	{ok, #{<<"ticket_status">> := Status}} = get("tasteprofile/status", [{<<"ticket">>, Ticket}]),
-	case Status of
-		<<"complete">> ->
-			ok;
-		<<"pending">> ->
-			timer:sleep(?WaitForTicketFinishRefreshDelay),
-			wait_for_ticket_to_finish(Ticket)
-	end.
+    {ok, #{<<"ticket_status">> := Status}} = get("tasteprofile/status", [{<<"ticket">>, Ticket}]),
+    case Status of
+        <<"complete">> ->
+            ok;
+        <<"pending">> ->
+            timer:sleep(?WaitForTicketFinishRefreshDelay),
+            wait_for_ticket_to_finish(Ticket)
+    end.
 
 %% ===================================================================
 %% Rate Limiter
@@ -93,25 +93,25 @@ req(Type, Path, Data) ->
     %% the application.
     {ok, APIKey} = application:get_env(?APPLICATION, echonest_api_key), 
     DataStr = uri_params_encode([{"api_key", APIKey} | Data]),
-	URL = "http://developer.echonest.com/api/v4/"++Path,
-	Req = request_arg(Type, URL, DataStr),
+    URL = "http://developer.echonest.com/api/v4/"++Path,
+    Req = request_arg(Type, URL, DataStr),
     {ok, Response} = httpc:request(Type, Req, [], []),
     {{_HTTPVersion, Code, _State}, Head, Body} = Response,
     {RateLimit, _Rest} = string:to_integer(proplists:get_value("x-ratelimit-limit", Head)),
     case Code of
-		200 ->
+        200 ->
             #{<<"response">> := EchonestRes} = jiffy:decode(Body, [return_maps]),
-		    {ok, {ok, EchonestRes}, RateLimit};
-		%% Rate limit exceed, very uncommon but could happen if rate limit is
+            {ok, {ok, EchonestRes}, RateLimit};
+        %% Rate limit exceed, very uncommon but could happen if rate limit is
         %% reduced or if someone fails after performing a request but before
         %% returning the rate limit to echonest_api.
-		429 ->
-			%% Wait a little bit ... (there's nothing special about the choosen
+        429 ->
+            %% Wait a little bit ... (there's nothing special about the choosen
             %% time, just wait a little longer if rate limit is smaller) 
-			{RateLimit,_} = string:to_integer(proplists:get_value("x-ratelimit-limit", Head)),
-		    timer:sleep(round(?MINUTE / RateLimit)),
-			%% ... and retry.
-			req(Type, Path, Data);
+            {RateLimit,_} = string:to_integer(proplists:get_value("x-ratelimit-limit", Head)),
+            timer:sleep(round(?MINUTE / RateLimit)),
+            %% ... and retry.
+            req(Type, Path, Data);
         _Other ->
             {RateLimit,_} = string:to_integer(proplists:get_value("x-ratelimit-limit", Head)),
             {ok, {error, Response}, RateLimit}
